@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: fastapi-books-api
+    runtime: python
+    buildCommand: ""
+    startCommand: ./start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+    plan: free
