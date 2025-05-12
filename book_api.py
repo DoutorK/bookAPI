@@ -24,6 +24,13 @@ def book_id_exists(book_id: int) -> bool:
 def list_books():
     return books
 
+@router.get("/books/<id>", response_model=Book)
+def get_book_by_id(id: int):
+    book = find_book_by_id(id)
+    if book is None:
+        raise HTTPException(status_code=404, detail="Livro não encontrado.")
+    return book
+
 @router.post("/books", response_model=Book, status_code=201)
 def create_book(book: Book):
     if book_id_exists(book.id):
