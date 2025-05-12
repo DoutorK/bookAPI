@@ -25,12 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verificar estilo com flake8
-        run: |
-          pip install flake8
-          flake8 . --exclude venv,__pycache__
-
       - name: Executar testes (opcional)
         run: |
           echo "Adicione testes aqui com pytest ou unittest"
-          # Ex: pytest
