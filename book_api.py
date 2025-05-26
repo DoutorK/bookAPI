@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
+from prometheus_client import Counter
 
 router = APIRouter()
+
+# Modelo de dados para um livro
+BOOKS_COUNTER = Counter('books_total', 'Número total de livors no sistema')
+BOOKS_REQUESTS_COUNTER = Counter('books_requests_total', 'Número total de requisições para livros', ['endpoint'])
+
 
 class Book(BaseModel):
     id: int
