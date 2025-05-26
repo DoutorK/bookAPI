@@ -28,15 +28,17 @@ def book_id_exists(book_id: int) -> bool:
 # Rotas
 @router.get("/books", response_model=List[Book])
 def list_books():
+    BOOKS_REQUESTS_COUNTER.labels(endpoint='/books').inc()
     return books
 
 @router.get("/health", response_model=dict)
 def health_check():
     return {"status": "ok"}
 
-@router.get("/books/<id>", response_model=Book)
-def get_book_by_id(id: int):
-    book = find_book_by_id(id)
+@router.get("/books/{book_id}", response_model=Book)
+def get_book(book_id: int):
+    BOOKS_REQUESTS_COUNTER.labels(endpoint='/books/{book_id}').inc()
+    book = find_book_by_id(book_id)
     if book is None:
         raise HTTPException(status_code=404, detail="Livro não encontrado.")
     return book
@@ -46,11 +48,5 @@ def create_book(book: Book):
     if book_id_exists(book.id):
         raise HTTPException(status_code=400, detail="O ID desse livro já existe.")
     books.append(book)
-    return book
-
-@router.get("/books/{book_id}", response_model=Book)
-def get_book(book_id: int):
-    book = find_book_by_id(book_id)
-    if book is None:
-        raise HTTPException(status_code=404, detail="Livro não encontrado.")
+    BOOKS_COUNTER.inc()
     return book
