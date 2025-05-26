@@ -24,6 +24,10 @@ def book_id_exists(book_id: int) -> bool:
 def list_books():
     return books
 
+@router.get("/health", response_model=dict)
+def health_check():
+    return {"status": "ok"}
+
 @router.get("/books/<id>", response_model=Book)
 def get_book_by_id(id: int):
     book = find_book_by_id(id)
