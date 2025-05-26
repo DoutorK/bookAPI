@@ -8,7 +8,9 @@ router = APIRouter()
 # Modelo de dados para um livro
 BOOKS_COUNTER = Counter('books_total', 'Número total de livors no sistema')
 REQUESTS_COUNTER = Counter('http_requests_total', 'Total de requisições por rota', ['method', 'endpoint', 'status'])
-
+RESPONSE_TIME = Histogram('http_request_duration_seconds', 'Tempo de resposta por rota',
+                         ['method', 'endpoint'],
+                         buckets=[0.1, 0.5, 1.0, 2.0, 5.0])
 
 
 class Book(BaseModel):
