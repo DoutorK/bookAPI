@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
-from prometheus_client import Counter
+from prometheus_client import Counter, Gauge
 
 router = APIRouter()
 
 # Modelo de dados para um livro
 BOOKS_COUNTER = Counter('books_total', 'Número total de livors no sistema')
 BOOKS_REQUESTS_COUNTER = Counter('books_requests_total', 'Número total de requisições para livros', ['endpoint'])
+BOOKS_GAUGE = Gauge('books_gauge', 'Número atual de livros no sistema')
 
 
 class Book(BaseModel):
@@ -49,4 +50,5 @@ def create_book(book: Book):
         raise HTTPException(status_code=400, detail="O ID desse livro já existe.")
     books.append(book)
     BOOKS_COUNTER.inc()
+    BOOKS_GAUGE.set(len(books))
     return book
