@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Histogram, Gauge
+import time
 
 router = APIRouter()
 
@@ -12,6 +13,8 @@ RESPONSE_TIME = Histogram('http_request_duration_seconds', 'Tempo de resposta po
                          ['method', 'endpoint'],
                          buckets=[0.1, 0.5, 1.0, 2.0, 5.0])
 
+ERROR_COUNTER = Counter('http_errors_total', 'Total de erros por rota', ['method', 'endpoint', 'error_type'])
+BOOKS_GAUGE = Gauge('current_books', 'Current number of books in the system')
 
 class Book(BaseModel):
     id: int
@@ -28,29 +31,60 @@ def find_book_by_id(book_id: int) -> Book | None:
 def book_id_exists(book_id: int) -> bool:
     return any(book.id == book_id for book in books)
 
+def instrument_request(method: str, endpoint: str):
+    start_time = time.time()
+    def callback(status_code: int, error_type: str = None):
+        duration = time.time() - start_time
+        REQUESTS_COUNTER.labels(method=method, endpoint=endpoint, status=status_code).inc()
+        RESPONSE_TIME.labels(method=method, endpoint=endpoint).observe(duration)
+        if error_type:
+            ERROR_COUNTER.labels(method=method, endpoint=endpoint, error_type=error_type).inc()
+    return callback
+
 # Rotas
 @router.get("/books", response_model=List[Book])
 def list_books():
-    BOOKS_REQUESTS_COUNTER.labels(endpoint='/books').inc()
-    return books
-
-@router.get("/health", response_model=dict)
-def health_check():
-    return {"status": "ok"}
+    callback = instrument_request('GET', '/books')
+    try:
+        result = books
+        callback(200)
+        return result
+    except Exception as e:
+        callback(500, str(type(e).__name__))
+        raise
 
 @router.get("/books/{book_id}", response_model=Book)
 def get_book(book_id: int):
-    BOOKS_REQUESTS_COUNTER.labels(endpoint='/books/{book_id}').inc()
-    book = find_book_by_id(book_id)
-    if book is None:
-        raise HTTPException(status_code=404, detail="Livro não encontrado.")
-    return book
+    callback = instrument_request('GET', '/books/{book_id}')
+    try:
+        book = find_book_by_id(book_id)
+        if book is None:
+            callback(404, 'NotFoundError')
+            raise HTTPException(status_code=404, detail="Livro não encontrado.")
+        callback(200)
+        return book
+    except HTTPException as e:
+        callback(e.status_code, 'HTTPException')
+        raise
+    except Exception as e:
+        callback(500, str(type(e).__name__))
+        raise
 
 @router.post("/books", response_model=Book, status_code=201)
 def create_book(book: Book):
-    if book_id_exists(book.id):
-        raise HTTPException(status_code=400, detail="O ID desse livro já existe.")
-    books.append(book)
-    BOOKS_COUNTER.inc()
-    BOOKS_GAUGE.set(len(books))
-    return book
+    callback = instrument_request('POST', '/books')
+    try:
+        if book_id_exists(book.id):
+            callback(400, 'DuplicateIDError')
+            raise HTTPException(status_code=400, detail="O ID desse livro já existe.")
+        books.append(book)
+        BOOKS_COUNTER.inc()
+        BOOKS_GAUGE.set(len(books))
+        callback(201)
+        return book
+    except HTTPException as e:
+        callback(e.status_code, 'HTTPException')
+        raise
+    except Exception as e:
+        callback(500, str(type(e).__name__))
+        raise
