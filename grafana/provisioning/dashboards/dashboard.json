@@ -167,7 +167,88 @@
         "targets": [
           {
             "expr": "rate(http_request_duration_seconds_sum{job=\"fastapi\"}[5m]) / rate(http_request_duration_seconds_count{job=\"fastapi\"}[5m])",
-            "legendFormat": "{{path}}"
+            "legendFormat": "{{endpoint}}"
+          }
+        ]
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "id": 3,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "title": "Erros por Rota",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum by (endpoint, error_type) (rate(http_errors_total{job=\"fastapi\"}[5m]))",
+            "legendFormat": "{{endpoint}} - {{error_type}}"
           }
         ]
       }
@@ -189,4 +270,4 @@
     "uid": "fastapi-metrics",
     "version": 1,
     "weekStart": ""
-  }
+}
